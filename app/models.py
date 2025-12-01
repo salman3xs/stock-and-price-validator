@@ -32,6 +32,18 @@ class VendorBResponse(BaseModel):
     data_timestamp: int  # Unix timestamp
 
 
+class VendorCResponse(BaseModel):
+    """
+    Vendor C schema - distinct structure for Requirement 8.
+    Simulates a legacy system or different provider.
+    """
+    id: str  # SKU equivalent
+    qty: Optional[str] = None  # Quantity as string
+    cost: float  # Price
+    available: str  # "yes" or "no"
+    updated_at: str  # ISO string timestamp
+
+
 class NormalizedProduct(BaseModel):
     """
     Normalized product data after processing vendor responses.

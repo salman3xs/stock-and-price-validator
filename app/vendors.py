@@ -10,7 +10,9 @@ from datetime import datetime
 import json
 import aiofiles
 import os
-from app.models import VendorAResponse, VendorBResponse
+import random
+import asyncio
+from app.models import VendorAResponse, VendorBResponse, VendorCResponse
 
 
 class VendorA:
@@ -117,4 +119,69 @@ class VendorB:
             price_usd=product_data["price"],  # String format
             in_stock=product_data["in_stock"],
             data_timestamp=int(datetime.utcnow().timestamp())
+        )
+
+
+class VendorC:
+    """
+    Mock Vendor C - Simulates slow responses and intermittent failures.
+    Requirement 8:
+    - Slow responses (simulated delay)
+    - Intermittent failures (random errors)
+    - Different field structure
+    """
+    
+    name: str = "VendorC"
+    _data_file: str = os.path.join(os.path.dirname(__file__), "data", "vendor_c_products.json")
+    _cache: Optional[Dict[str, Dict[str, Any]]] = None
+    
+    @classmethod
+    async def _load_products(cls) -> Dict[str, Dict[str, Any]]:
+        """
+        Load product data from JSON file asynchronously.
+        """
+        if cls._cache is not None:
+            return cls._cache
+        
+        async with aiofiles.open(cls._data_file, mode='r') as f:
+            content = await f.read()
+            cls._cache = json.loads(content)
+            return cls._cache
+    
+    @classmethod
+    async def get_product(cls, sku: str) -> Optional[VendorCResponse]:
+        """
+        Fetch product data from Vendor C with simulated issues.
+        
+        Args:
+            sku: Product SKU to fetch
+            
+        Returns:
+            VendorCResponse if product exists, None otherwise
+            
+        Raises:
+            Exception: Randomly raises exception to simulate failure
+        """
+        # Simulate slow response (0.1 to 2 seconds delay)
+        # Requirement 8: Slow responses
+        delay = random.uniform(0.1, 2.0)
+        await asyncio.sleep(delay)
+        
+        # Simulate intermittent failure (20% chance)
+        # Requirement 8: Intermittent failures
+        if random.random() < 0.2:
+            raise Exception("Vendor C connection timeout")
+            
+        products = await cls._load_products()
+        product_data = products.get(sku)
+        
+        if not product_data:
+            return None
+            
+        return VendorCResponse(
+            id=sku,
+            qty=product_data["qty"],
+            cost=product_data["cost"],
+            available=product_data["available"],
+            updated_at=datetime.utcnow().isoformat()
         )

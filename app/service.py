@@ -7,7 +7,7 @@ import asyncio
 from typing import List, Optional
 import logging
 from app.models import NormalizedProduct, ProductResponse
-from app.vendors import VendorA, VendorB
+from app.vendors import VendorA, VendorB, VendorC
 from app.normalizer import ProductNormalizer
 from app.cache import cache
 
@@ -66,6 +66,28 @@ class ProductService:
             # Graceful error handling - if vendor fails, skip it
             logger.error(f"VendorB: Error fetching {sku}: {str(e)}")
             return None
+
+    async def _fetch_from_vendor_c(self, sku: str) -> Optional[NormalizedProduct]:
+        """
+        Fetch and normalize product from Vendor C.
+        
+        Args:
+            sku: Product SKU
+            
+        Returns:
+            Normalized product or None if not found/invalid
+        """
+        try:
+            response = await VendorC.get_product(sku)
+            if response is None:
+                logger.info(f"VendorC: Product {sku} not found")
+                return None
+            
+            return self.normalizer.normalize_vendor_c(response)
+        except Exception as e:
+            # Graceful error handling - if vendor fails, skip it
+            logger.error(f"VendorC: Error fetching {sku}: {str(e)}")
+            return None
     
     async def get_product(self, sku: str) -> Optional[NormalizedProduct]:
         """
@@ -73,7 +95,7 @@ class ProductService:
         
         Business Logic:
         1. Check Redis cache
-        2. Call both vendors in parallel using asyncio.gather()
+        2. Call all vendors (A, B, C) in parallel using asyncio.gather()
         3. Normalize responses from each vendor
         4. Select best vendor (stock > 0, lowest price)
         5. Save to Redis cache
@@ -94,11 +116,12 @@ class ProductService:
             
         logger.info(f"Fetching product {sku} from all vendors")
         
-        # Requirement 4: Concurrency - Call both vendors in parallel
+        # Requirement 4 & 8: Concurrency - Call all vendors in parallel
         # Using asyncio.gather() to execute vendor calls concurrently
         vendor_results = await asyncio.gather(
             self._fetch_from_vendor_a(sku),
             self._fetch_from_vendor_b(sku),
+            self._fetch_from_vendor_c(sku),
             return_exceptions=False  # We handle exceptions in individual methods
         )
         

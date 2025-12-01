@@ -1,0 +1,27 @@
+{
+    "SKU001": {
+        "qty": "10",
+        "cost": 105.00,
+        "available": "yes"
+    },
+    "SKU002": {
+        "qty": "8",
+        "cost": 145.00,
+        "available": "yes"
+    },
+    "SKU003": {
+        "qty": "0",
+        "cost": 85.00,
+        "available": "no"
+    },
+    "SKU004": {
+        "qty": "100",
+        "cost": 195.00,
+        "available": "yes"
+    },
+    "SKU007": {
+        "qty": "50",
+        "cost": 55.00,
+        "available": "yes"
+    }
+}

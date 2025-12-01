@@ -7,6 +7,7 @@ from typing import Optional, List
 from app.models import (
     VendorAResponse, 
     VendorBResponse, 
+    VendorCResponse,
     NormalizedProduct
 )
 import logging
@@ -136,6 +137,64 @@ class ProductNormalizer:
             # Price validation failed
             logger.warning(
                 f"VendorB: Invalid data for {response.sku} - {str(e)}"
+            )
+            return None
+
+    @staticmethod
+    def normalize_vendor_c(response: VendorCResponse) -> Optional[NormalizedProduct]:
+        """
+        Normalize Vendor C response.
+        
+        Business Rules:
+        - Stock Normalization: 
+          - Convert qty string to int. If invalid/null, use 0.
+          - If available="no", stock = 0 regardless of qty.
+          - If qty is null/0 but available="yes", stock = 5 (consistent with other vendors).
+        - Price Validation: Must be numeric and > 0
+        
+        Args:
+            response: Raw response from Vendor C
+            
+        Returns:
+            NormalizedProduct if valid, None if price is invalid
+        """
+        try:
+            # Stock normalization logic
+            stock = 0
+            
+            # Parse quantity string
+            try:
+                if response.qty:
+                    stock = int(response.qty)
+            except (ValueError, TypeError):
+                logger.warning(f"VendorC: Invalid quantity format for {response.id}: {response.qty}")
+                stock = 0
+            
+            # Apply availability logic
+            if response.available.lower() == "no":
+                stock = 0
+                logger.info(f"VendorC: {response.id} - available='no', setting stock=0")
+            elif stock == 0 and response.available.lower() == "yes":
+                stock = 5
+                logger.info(f"VendorC: {response.id} - qty=0/null with available='yes', assuming stock=5")
+            
+            # Price validation
+            normalized = NormalizedProduct(
+                sku=response.id,
+                vendor_name="VendorC",
+                price=response.cost,
+                stock=stock
+            )
+            
+            logger.info(
+                f"VendorC: Successfully normalized {response.id} - "
+                f"price={normalized.price}, stock={normalized.stock}"
+            )
+            return normalized
+            
+        except ValueError as e:
+            logger.warning(
+                f"VendorC: Invalid data for {response.id} - {str(e)}"
             )
             return None
     
