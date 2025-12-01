@@ -9,6 +9,7 @@ import logging
 from app.models import NormalizedProduct, ProductResponse
 from app.vendors import VendorA, VendorB
 from app.normalizer import ProductNormalizer
+from app.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +72,11 @@ class ProductService:
         Get product from all vendors concurrently and return the best option.
         
         Business Logic:
-        1. Call both vendors in parallel using asyncio.gather()
-        2. Normalize responses from each vendor
-        3. Select best vendor (stock > 0, lowest price)
+        1. Check Redis cache
+        2. Call both vendors in parallel using asyncio.gather()
+        3. Normalize responses from each vendor
+        4. Select best vendor (stock > 0, lowest price)
+        5. Save to Redis cache
         
         Args:
             sku: Product SKU to fetch
@@ -81,6 +84,14 @@ class ProductService:
         Returns:
             NormalizedProduct (best vendor) or None if all out of stock
         """
+        # Requirement 6: Caching - Check cache first
+        cache_key = cache.get_cache_key("product", sku)
+        cached_data = await cache.get(cache_key)
+        
+        if cached_data:
+            logger.info(f"Returning cached data for SKU: {sku}")
+            return NormalizedProduct(**cached_data)
+            
         logger.info(f"Fetching product {sku} from all vendors")
         
         # Requirement 4: Concurrency - Call both vendors in parallel
@@ -105,5 +116,9 @@ class ProductService:
             # All vendors are out of stock or no valid data
             logger.info(f"Product {sku} is OUT_OF_STOCK across all vendors")
             return None
+        
+        # Requirement 6: Caching - Save to cache
+        # Using model_dump() for Pydantic v2
+        await cache.set(cache_key, best_product.model_dump())
         
         return best_product

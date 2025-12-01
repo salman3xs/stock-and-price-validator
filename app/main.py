@@ -5,6 +5,7 @@ FastAPI application entry point.
 from fastapi import FastAPI
 import logging
 from app.routers import products
+from app.cache import cache
 
 # Configure logging
 logging.basicConfig(
@@ -19,6 +20,17 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs"
 )
+
+# Redis Connection Lifecycle
+@app.on_event("startup")
+async def startup_event():
+    """Initialize Redis connection on startup."""
+    await cache.connect()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Close Redis connection on shutdown."""
+    await cache.disconnect()
 
 # Include routers
 app.include_router(products.router)
