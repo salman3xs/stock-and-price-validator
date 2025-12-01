@@ -59,12 +59,19 @@ class VendorA:
         if not product_data:
             return None
         
+        # Determine timestamp
+        # Requirement 9: Allow simulation of stale data via JSON
+        if "last_updated" in product_data:
+            last_updated = datetime.fromisoformat(product_data["last_updated"])
+        else:
+            last_updated = datetime.utcnow()
+
         return VendorAResponse(
             product_code=sku,
             inventory_count=product_data["inventory"],
             unit_price=product_data["price"],
             availability_status=product_data["status"],
-            last_updated=datetime.utcnow()
+            last_updated=last_updated
         )
 
 
@@ -113,12 +120,19 @@ class VendorB:
         if not product_data:
             return None
         
+        # Determine timestamp
+        # Requirement 9: Allow simulation of stale data via JSON
+        if "data_timestamp" in product_data:
+            data_timestamp = int(product_data["data_timestamp"])
+        else:
+            data_timestamp = int(datetime.utcnow().timestamp())
+        
         return VendorBResponse(
             sku=sku,
             stock_level=product_data["stock"],
             price_usd=product_data["price"],  # String format
             in_stock=product_data["in_stock"],
-            data_timestamp=int(datetime.utcnow().timestamp())
+            data_timestamp=data_timestamp
         )
 
 
@@ -178,10 +192,17 @@ class VendorC:
         if not product_data:
             return None
             
+        # Determine timestamp
+        # Requirement 9: Allow simulation of stale data via JSON
+        if "updated_at" in product_data:
+            updated_at = product_data["updated_at"]
+        else:
+            updated_at = datetime.utcnow().isoformat()
+            
         return VendorCResponse(
             id=sku,
             qty=product_data["qty"],
             cost=product_data["cost"],
             available=product_data["available"],
-            updated_at=datetime.utcnow().isoformat()
+            updated_at=updated_at
         )

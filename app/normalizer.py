@@ -4,6 +4,7 @@ Handles stock normalization, price validation, and conversion to unified format.
 """
 
 from typing import Optional, List
+from datetime import datetime, timedelta
 from app.models import (
     VendorAResponse, 
     VendorBResponse, 
@@ -22,7 +23,19 @@ class ProductNormalizer:
     """
     
     @staticmethod
-    def normalize_vendor_a(response: VendorAResponse) -> Optional[NormalizedProduct]:
+    def _is_fresh(timestamp: datetime) -> bool:
+        """
+        Check if data is fresh (not older than 10 minutes).
+        Requirement 9: Data Freshness Rule
+        """
+        cutoff = datetime.utcnow() - timedelta(minutes=10)
+        is_fresh = timestamp >= cutoff
+        if not is_fresh:
+            logger.warning(f"Data is stale! Timestamp: {timestamp}, Cutoff: {cutoff}")
+        return is_fresh
+    
+    @classmethod
+    def normalize_vendor_a(cls, response: VendorAResponse) -> Optional[NormalizedProduct]:
         """
         Normalize Vendor A response.
         
@@ -38,6 +51,11 @@ class ProductNormalizer:
             NormalizedProduct if valid, None if price is invalid
         """
         try:
+            # Requirement 9: Data Freshness
+            if not cls._is_fresh(response.last_updated):
+                logger.warning(f"VendorA: Stale data for {response.product_code}, discarding.")
+                return None
+
             # Stock normalization logic
             if response.inventory_count is None:
                 # If inventory is null, check status
@@ -60,24 +78,19 @@ class ProductNormalizer:
                 sku=response.product_code,
                 vendor_name="VendorA",
                 price=response.unit_price,
-                stock=stock
+                stock=stock,
+                source_timestamp=response.last_updated
             )
             
-            logger.info(
-                f"VendorA: Successfully normalized {response.product_code} - "
-                f"price={normalized.price}, stock={normalized.stock}"
-            )
+            logger.info(f"VendorA: Successfully normalized {response.product_code}")
             return normalized
             
         except ValueError as e:
-            # Price validation failed
-            logger.warning(
-                f"VendorA: Invalid price for {response.product_code}: {response.unit_price} - {str(e)}"
-            )
+            logger.warning(f"VendorA: Invalid price for {response.product_code}: {response.unit_price} - {str(e)}")
             return None
     
-    @staticmethod
-    def normalize_vendor_b(response: VendorBResponse) -> Optional[NormalizedProduct]:
+    @classmethod
+    def normalize_vendor_b(cls, response: VendorBResponse) -> Optional[NormalizedProduct]:
         """
         Normalize Vendor B response.
         
@@ -93,6 +106,14 @@ class ProductNormalizer:
             NormalizedProduct if valid, None if price is invalid
         """
         try:
+            # Convert timestamp (Unix timestamp is in UTC)
+            timestamp = datetime.utcfromtimestamp(response.data_timestamp)
+            
+            # Requirement 9: Data Freshness
+            if not cls._is_fresh(timestamp):
+                logger.warning(f"VendorB: Stale data for {response.sku}, discarding.")
+                return None
+
             # Stock normalization logic
             if response.stock_level is None:
                 # If stock is null, check in_stock flag
@@ -113,10 +134,8 @@ class ProductNormalizer:
             # Assumption: Price string is in valid decimal format (e.g., "99.99")
             try:
                 price = float(response.price_usd)
-            except (ValueError, TypeError) as e:
-                logger.warning(
-                    f"VendorB: Cannot convert price to float for {response.sku}: {response.price_usd}"
-                )
+            except (ValueError, TypeError):
+                logger.warning(f"VendorB: Cannot convert price to float for {response.sku}: {response.price_usd}")
                 return None
             
             # Price validation - Pydantic model will validate price > 0
@@ -124,7 +143,8 @@ class ProductNormalizer:
                 sku=response.sku,
                 vendor_name="VendorB",
                 price=price,
-                stock=stock
+                stock=stock,
+                source_timestamp=timestamp
             )
             
             logger.info(
@@ -134,14 +154,11 @@ class ProductNormalizer:
             return normalized
             
         except ValueError as e:
-            # Price validation failed
-            logger.warning(
-                f"VendorB: Invalid data for {response.sku} - {str(e)}"
-            )
+            logger.warning(f"VendorB: Invalid data for {response.sku} - {str(e)}")
             return None
 
-    @staticmethod
-    def normalize_vendor_c(response: VendorCResponse) -> Optional[NormalizedProduct]:
+    @classmethod
+    def normalize_vendor_c(cls, response: VendorCResponse) -> Optional[NormalizedProduct]:
         """
         Normalize Vendor C response.
         
@@ -159,6 +176,18 @@ class ProductNormalizer:
             NormalizedProduct if valid, None if price is invalid
         """
         try:
+            # Parse timestamp
+            try:
+                timestamp = datetime.fromisoformat(response.updated_at)
+            except ValueError:
+                logger.warning(f"VendorC: Invalid timestamp format for {response.id}: {response.updated_at}")
+                return None
+                
+            # Requirement 9: Data Freshness
+            if not cls._is_fresh(timestamp):
+                logger.warning(f"VendorC: Stale data for {response.id}, discarding.")
+                return None
+
             # Stock normalization logic
             stock = 0
             
@@ -183,19 +212,15 @@ class ProductNormalizer:
                 sku=response.id,
                 vendor_name="VendorC",
                 price=response.cost,
-                stock=stock
+                stock=stock,
+                source_timestamp=timestamp
             )
             
-            logger.info(
-                f"VendorC: Successfully normalized {response.id} - "
-                f"price={normalized.price}, stock={normalized.stock}"
-            )
+            logger.info(f"VendorC: Successfully normalized {response.id}")
             return normalized
             
         except ValueError as e:
-            logger.warning(
-                f"VendorC: Invalid data for {response.id} - {str(e)}"
-            )
+            logger.warning(f"VendorC: Invalid data for {response.id} - {str(e)}")
             return None
     
     @classmethod

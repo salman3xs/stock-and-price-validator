@@ -141,7 +141,7 @@ class ProductService:
             return None
         
         # Requirement 6: Caching - Save to cache
-        # Using model_dump() for Pydantic v2
-        await cache.set(cache_key, best_product.model_dump())
+        # Using model_dump(mode='json') for Pydantic v2 with datetime serialization
+        await cache.set(cache_key, best_product.model_dump(mode='json'))
         
         return best_product

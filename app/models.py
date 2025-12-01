@@ -53,6 +53,7 @@ class NormalizedProduct(BaseModel):
     vendor_name: str
     price: float
     stock: int
+    source_timestamp: datetime  # Requirement 9: Data Freshness
     is_valid: bool = True  # Flag to mark if data is valid after normalization
     
     @field_validator('price')

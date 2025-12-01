@@ -2,26 +2,31 @@
     "SKU001": {
         "qty": "10",
         "cost": 105.00,
-        "available": "yes"
+        "available": "yes",
+        "updated_at": "2025-12-01T18:20:00"
     },
     "SKU002": {
         "qty": "8",
         "cost": 145.00,
-        "available": "yes"
+        "available": "yes",
+        "updated_at": "2025-12-01T18:20:00"
     },
     "SKU003": {
         "qty": "0",
         "cost": 85.00,
-        "available": "no"
+        "available": "no",
+        "updated_at": "2025-12-01T18:20:00"
     },
     "SKU004": {
         "qty": "100",
         "cost": 195.00,
-        "available": "yes"
+        "available": "yes",
+        "updated_at": "2025-12-01T18:20:00"
     },
     "SKU007": {
         "qty": "50",
         "cost": 55.00,
-        "available": "yes"
+        "available": "yes",
+        "updated_at": "2025-12-01T18:20:00"
     }
 }
