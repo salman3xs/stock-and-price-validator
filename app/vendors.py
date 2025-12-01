@@ -122,17 +122,17 @@ class VendorB:
         
         # Determine timestamp
         # Requirement 9: Allow simulation of stale data via JSON
-        if "data_timestamp" in product_data:
-            data_timestamp = int(product_data["data_timestamp"])
+        if "updated_at" in product_data:
+            updated_at = product_data["updated_at"]
         else:
-            data_timestamp = int(datetime.utcnow().timestamp())
+            updated_at = datetime.utcnow().isoformat()
         
         return VendorBResponse(
             sku=sku,
             stock_level=product_data["stock"],
             price_usd=product_data["price"],  # String format
             in_stock=product_data["in_stock"],
-            data_timestamp=data_timestamp
+            updated_at=updated_at
         )
 
 

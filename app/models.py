@@ -29,7 +29,7 @@ class VendorBResponse(BaseModel):
     stock_level: Optional[int] = None  # Can be null
     price_usd: str  # Price as string, needs to be converted to float
     in_stock: bool
-    data_timestamp: int  # Unix timestamp
+    updated_at: str  # ISO string timestamp (Standardized)
 
 
 class VendorCResponse(BaseModel):

@@ -106,8 +106,8 @@ class ProductNormalizer:
             NormalizedProduct if valid, None if price is invalid
         """
         try:
-            # Convert timestamp (Unix timestamp is in UTC)
-            timestamp = datetime.utcfromtimestamp(response.data_timestamp)
+            # Convert timestamp (Standardized ISO string)
+            timestamp = datetime.fromisoformat(response.updated_at)
             
             # Requirement 9: Data Freshness
             if not cls._is_fresh(timestamp):
@@ -228,8 +228,10 @@ class ProductNormalizer:
         """
         Select the best vendor based on business rules.
         
-        Business Rules:
-        - Vendor with stock > 0 and lowest price wins
+        Business Rules (Requirement 10):
+        - Filter products with stock > 0
+        - If price difference > 10%: Choose vendor with higher stock
+        - Otherwise: Choose vendor with lowest price
         - If all vendors are out of stock, return None
         
         Args:
@@ -245,12 +247,36 @@ class ProductNormalizer:
             logger.info("All vendors are out of stock")
             return None
         
-        # Select product with lowest price
-        best_product = min(in_stock_products, key=lambda p: p.price)
+        # If only one vendor has stock, return it
+        if len(in_stock_products) == 1:
+            best_product = in_stock_products[0]
+            logger.info(
+                f"Only one vendor in stock: {best_product.vendor_name} - "
+                f"SKU={best_product.sku}, price={best_product.price}, stock={best_product.stock}"
+            )
+            return best_product
         
-        logger.info(
-            f"Best vendor selected: {best_product.vendor_name} - "
-            f"SKU={best_product.sku}, price={best_product.price}, stock={best_product.stock}"
-        )
+        # Find min and max prices
+        min_price = min(p.price for p in in_stock_products)
+        max_price = max(p.price for p in in_stock_products)
+        
+        # Calculate price difference percentage
+        price_diff_percentage = ((max_price - min_price) / min_price) * 100
+        
+        # Requirement 10: If price difference > 10%, choose vendor with higher stock
+        if price_diff_percentage > 10:
+            best_product = max(in_stock_products, key=lambda p: p.stock)
+            logger.info(
+                f"Price difference {price_diff_percentage:.2f}% > 10%, selecting vendor with highest stock: "
+                f"{best_product.vendor_name} - SKU={best_product.sku}, price={best_product.price}, stock={best_product.stock}"
+            )
+        else:
+            # Otherwise, select product with lowest price
+            best_product = min(in_stock_products, key=lambda p: p.price)
+            logger.info(
+                f"Price difference {price_diff_percentage:.2f}% <= 10%, selecting vendor with lowest price: "
+                f"{best_product.vendor_name} - SKU={best_product.sku}, price={best_product.price}, stock={best_product.stock}"
+            )
         
         return best_product
+
