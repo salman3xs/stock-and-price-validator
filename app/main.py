@@ -6,6 +6,7 @@ from fastapi import FastAPI
 import logging
 from app.routers import products
 from app.cache import cache
+from app.rate_limiter import RateLimitMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -20,6 +21,10 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs"
 )
+
+# Requirement 15: Add Rate Limiting Middleware
+# 60 requests per minute per API key
+app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
 
 # Redis Connection Lifecycle
 @app.on_event("startup")

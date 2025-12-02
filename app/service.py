@@ -10,6 +10,7 @@ from app.models import NormalizedProduct, ProductResponse
 from app.vendors import VendorA, VendorB, VendorC
 from app.normalizer import ProductNormalizer
 from app.cache import cache
+from app.circuit_breaker import CircuitBreaker
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,11 @@ class ProductService:
     
     def __init__(self):
         self.normalizer = ProductNormalizer()
+        
+        # Requirement 13: Circuit Breakers for each vendor
+        self.circuit_breaker_a = CircuitBreaker("VendorA", failure_threshold=3, cooldown_seconds=30)
+        self.circuit_breaker_b = CircuitBreaker("VendorB", failure_threshold=3, cooldown_seconds=30)
+        self.circuit_breaker_c = CircuitBreaker("VendorC", failure_threshold=3, cooldown_seconds=30)
     
     async def _fetch_with_retry(self, fetch_func, vendor_name: str, retries: int = 2, timeout: float = 2.0):
         """
@@ -55,7 +61,7 @@ class ProductService:
 
     async def _fetch_from_vendor_a(self, sku: str) -> Optional[NormalizedProduct]:
         """
-        Fetch and normalize product from Vendor A with retry logic.
+        Fetch and normalize product from Vendor A with circuit breaker and retry logic.
         """
         async def fetch():
             response = await VendorA.get_product(sku)
@@ -64,11 +70,12 @@ class ProductService:
                 return None
             return self.normalizer.normalize_vendor_a(response)
 
-        return await self._fetch_with_retry(fetch, "VendorA")
+        # Requirement 13: Circuit breaker wraps the retry logic
+        return await self.circuit_breaker_a.call(self._fetch_with_retry, fetch, "VendorA")
     
     async def _fetch_from_vendor_b(self, sku: str) -> Optional[NormalizedProduct]:
         """
-        Fetch and normalize product from Vendor B with retry logic.
+        Fetch and normalize product from Vendor B with circuit breaker and retry logic.
         """
         async def fetch():
             response = await VendorB.get_product(sku)
@@ -77,11 +84,12 @@ class ProductService:
                 return None
             return self.normalizer.normalize_vendor_b(response)
 
-        return await self._fetch_with_retry(fetch, "VendorB")
+        # Requirement 13: Circuit breaker wraps the retry logic
+        return await self.circuit_breaker_b.call(self._fetch_with_retry, fetch, "VendorB")
 
     async def _fetch_from_vendor_c(self, sku: str) -> Optional[NormalizedProduct]:
         """
-        Fetch and normalize product from Vendor C with retry logic.
+        Fetch and normalize product from Vendor C with circuit breaker and retry logic.
         """
         async def fetch():
             response = await VendorC.get_product(sku)
@@ -90,7 +98,8 @@ class ProductService:
                 return None
             return self.normalizer.normalize_vendor_c(response)
 
-        return await self._fetch_with_retry(fetch, "VendorC")
+        # Requirement 13: Circuit breaker wraps the retry logic
+        return await self.circuit_breaker_c.call(self._fetch_with_retry, fetch, "VendorC")
     
     async def get_product(self, sku: str) -> Optional[NormalizedProduct]:
         """
