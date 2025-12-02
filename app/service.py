@@ -23,71 +23,74 @@ class ProductService:
     def __init__(self):
         self.normalizer = ProductNormalizer()
     
+    async def _fetch_with_retry(self, fetch_func, vendor_name: str, retries: int = 2, timeout: float = 2.0):
+        """
+        Helper method to execute a fetch function with timeout and retries.
+        
+        Requirement 11:
+        - Timeout: 2 seconds
+        - Retries: 2 attempts (total 3 tries)
+        """
+        attempt = 0
+        last_exception = None
+        
+        while attempt <= retries:
+            try:
+                # Use asyncio.wait_for to enforce timeout
+                return await asyncio.wait_for(fetch_func(), timeout=timeout)
+            except asyncio.TimeoutError:
+                last_exception = TimeoutError(f"Request timed out after {timeout}s")
+                logger.warning(f"{vendor_name}: Timeout on attempt {attempt + 1}/{retries + 1}")
+            except Exception as e:
+                last_exception = e
+                logger.warning(f"{vendor_name}: Error on attempt {attempt + 1}/{retries + 1}: {str(e)}")
+            
+            attempt += 1
+            if attempt <= retries:
+                # Exponential backoff or simple delay could be added here
+                await asyncio.sleep(0.1 * attempt)
+        
+        logger.error(f"{vendor_name}: Failed after {retries + 1} attempts. Last error: {str(last_exception)}")
+        return None
+
     async def _fetch_from_vendor_a(self, sku: str) -> Optional[NormalizedProduct]:
         """
-        Fetch and normalize product from Vendor A.
-        
-        Args:
-            sku: Product SKU
-            
-        Returns:
-            Normalized product or None if not found/invalid
+        Fetch and normalize product from Vendor A with retry logic.
         """
-        try:
+        async def fetch():
             response = await VendorA.get_product(sku)
             if response is None:
                 logger.info(f"VendorA: Product {sku} not found")
                 return None
-            
             return self.normalizer.normalize_vendor_a(response)
-        except Exception as e:
-            # Graceful error handling - if vendor fails, skip it
-            logger.error(f"VendorA: Error fetching {sku}: {str(e)}")
-            return None
+
+        return await self._fetch_with_retry(fetch, "VendorA")
     
     async def _fetch_from_vendor_b(self, sku: str) -> Optional[NormalizedProduct]:
         """
-        Fetch and normalize product from Vendor B.
-        
-        Args:
-            sku: Product SKU
-            
-        Returns:
-            Normalized product or None if not found/invalid
+        Fetch and normalize product from Vendor B with retry logic.
         """
-        try:
+        async def fetch():
             response = await VendorB.get_product(sku)
             if response is None:
                 logger.info(f"VendorB: Product {sku} not found")
                 return None
-            
             return self.normalizer.normalize_vendor_b(response)
-        except Exception as e:
-            # Graceful error handling - if vendor fails, skip it
-            logger.error(f"VendorB: Error fetching {sku}: {str(e)}")
-            return None
+
+        return await self._fetch_with_retry(fetch, "VendorB")
 
     async def _fetch_from_vendor_c(self, sku: str) -> Optional[NormalizedProduct]:
         """
-        Fetch and normalize product from Vendor C.
-        
-        Args:
-            sku: Product SKU
-            
-        Returns:
-            Normalized product or None if not found/invalid
+        Fetch and normalize product from Vendor C with retry logic.
         """
-        try:
+        async def fetch():
             response = await VendorC.get_product(sku)
             if response is None:
                 logger.info(f"VendorC: Product {sku} not found")
                 return None
-            
             return self.normalizer.normalize_vendor_c(response)
-        except Exception as e:
-            # Graceful error handling - if vendor fails, skip it
-            logger.error(f"VendorC: Error fetching {sku}: {str(e)}")
-            return None
+
+        return await self._fetch_with_retry(fetch, "VendorC")
     
     async def get_product(self, sku: str) -> Optional[NormalizedProduct]:
         """
@@ -140,8 +143,8 @@ class ProductService:
             logger.info(f"Product {sku} is OUT_OF_STOCK across all vendors")
             return None
         
-        # Requirement 6: Caching - Save to cache
+        # Requirement 12: Mandatory Redis Cache with TTL = 2 minutes (120s)
         # Using model_dump(mode='json') for Pydantic v2 with datetime serialization
-        await cache.set(cache_key, best_product.model_dump(mode='json'))
+        await cache.set(cache_key, best_product.model_dump(mode='json'), ttl=120)
         
         return best_product
