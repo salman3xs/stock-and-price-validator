@@ -6,11 +6,11 @@ Implements concurrent vendor calls and error handling.
 import asyncio
 from typing import List, Optional
 import logging
-from app.models import NormalizedProduct, ProductResponse
-from app.vendors import VendorA, VendorB, VendorC
-from app.normalizer import ProductNormalizer
-from app.cache import cache
-from app.circuit_breaker import CircuitBreaker
+from app.models.models import NormalizedProduct, ProductResponse
+from app.data.vendors import VendorA, VendorB, VendorC
+from app.core.normalizer import ProductNormalizer
+from app.core.cache import cache
+from app.core.circuit_breaker import CircuitBreaker
 
 logger = logging.getLogger(__name__)
 

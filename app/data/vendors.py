@@ -12,7 +12,7 @@ import aiofiles
 import os
 import random
 import asyncio
-from app.models import VendorAResponse, VendorBResponse, VendorCResponse
+from app.models.models import VendorAResponse, VendorBResponse, VendorCResponse
 
 
 class VendorA:
@@ -22,7 +22,7 @@ class VendorA:
     """
     
     name: str = "VendorA"
-    _data_file: str = os.path.join(os.path.dirname(__file__), "data", "vendor_a_products.json")
+    _data_file: str = os.path.join(os.path.dirname(__file__), "vendor_a_products.json")
     _cache: Optional[Dict[str, Dict[str, Any]]] = None
     
     @classmethod
@@ -82,7 +82,7 @@ class VendorB:
     """
     
     name: str = "VendorB"
-    _data_file: str = os.path.join(os.path.dirname(__file__), "data", "vendor_b_products.json")
+    _data_file: str = os.path.join(os.path.dirname(__file__), "vendor_b_products.json")
     _cache: Optional[Dict[str, Dict[str, Any]]] = None
     
     @classmethod
@@ -146,7 +146,7 @@ class VendorC:
     """
     
     name: str = "VendorC"
-    _data_file: str = os.path.join(os.path.dirname(__file__), "data", "vendor_c_products.json")
+    _data_file: str = os.path.join(os.path.dirname(__file__), "vendor_c_products.json")
     _cache: Optional[Dict[str, Dict[str, Any]]] = None
     
     @classmethod

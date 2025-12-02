@@ -3,7 +3,7 @@ Product View.
 Responsible for formatting the product data for the API response.
 """
 
-from app.models import ProductResponse, NormalizedProduct
+from app.models.models import ProductResponse, NormalizedProduct
 from typing import Optional
 
 class ProductView:

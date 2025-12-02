@@ -5,7 +5,7 @@ Handles stock normalization, price validation, and conversion to unified format.
 
 from typing import Optional, List
 from datetime import datetime, timedelta
-from app.models import (
+from app.models.models import (
     VendorAResponse, 
     VendorBResponse, 
     VendorCResponse,

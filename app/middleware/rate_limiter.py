@@ -13,7 +13,7 @@ from typing import Optional
 from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from app.cache import cache
+from app.core.cache import cache
 
 logger = logging.getLogger(__name__)
 

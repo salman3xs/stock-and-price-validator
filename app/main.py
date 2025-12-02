@@ -5,8 +5,8 @@ FastAPI application entry point.
 from fastapi import FastAPI
 import logging
 from app.routers import products
-from app.cache import cache
-from app.rate_limiter import RateLimitMiddleware
+from app.core.cache import cache
+from app.middleware.rate_limiter import RateLimitMiddleware
 
 # Configure logging
 logging.basicConfig(

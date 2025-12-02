@@ -6,8 +6,8 @@ Orchestrates the flow between the router, service, and view.
 from fastapi import HTTPException
 import logging
 import re
-from app.service import ProductService
-from app.models import NormalizedProduct
+from app.core.service import ProductService
+from app.models.models import NormalizedProduct
 from typing import Optional
 
 logger = logging.getLogger(__name__)

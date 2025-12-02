@@ -4,7 +4,7 @@ Handles product related endpoints.
 """
 
 from fastapi import APIRouter, Path
-from app.models import ProductResponse, ErrorResponse
+from app.models.models import ProductResponse, ErrorResponse
 from app.controllers.product_controller import ProductController
 from app.views.product_view import ProductView
 

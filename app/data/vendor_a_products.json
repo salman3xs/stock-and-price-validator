@@ -3,36 +3,36 @@
         "inventory": 15,
         "price": 99.99,
         "status": "IN_STOCK",
-        "last_updated": "2025-12-02T02:50:00"
+        "last_updated": "2025-12-02T18:24:00"
     },
     "SKU002": {
         "inventory": null,
         "price": 149.99,
         "status": "IN_STOCK",
-        "last_updated": "2025-12-02T02:50:00"
+        "last_updated": "2025-12-02T18:24:00"
     },
     "SKU003": {
         "inventory": 0,
         "price": 79.99,
         "status": "OUT_OF_STOCK",
-        "last_updated": "2025-12-02T02:50:00"
+        "last_updated": "2025-12-02T18:24:00"
     },
     "SKU004": {
         "inventory": 25,
         "price": 199.99,
         "status": "IN_STOCK",
-        "last_updated": "2025-12-02T02:50:00"
+        "last_updated": "2025-12-02T18:24:00"
     },
     "SKU005": {
         "inventory": null,
         "price": 89.99,
         "status": "OUT_OF_STOCK",
-        "last_updated": "2025-12-02T02:50:00"
+        "last_updated": "2025-12-02T18:24:00"
     },
     "SKU008": {
         "inventory": 50,
         "price": 100.00,
         "status": "IN_STOCK",
-        "last_updated": "2025-12-02T02:50:00"
+        "last_updated": "2025-12-02T18:24:00"
     }
 }
